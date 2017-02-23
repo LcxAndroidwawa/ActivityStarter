@@ -1,6 +1,7 @@
 package activitystarter.compiler
 
 import activitystarter.Arg
+import activitystarter.KArg
 import activitystarter.MakeActivityStarter
 import activitystarter.compiler.KnownClassType.*
 import activitystarter.compiler.classbinding.*
@@ -14,8 +15,14 @@ import javax.lang.model.type.TypeMirror
 
 internal fun parseArg(element: Element, builderMap: MutableMap<TypeElement, ClassBinding>) {
     val enclosingElement = element.enclosingElement as TypeElement
-    val elementType = getElementType(element)
+    val elementType = getFieldType(element)
     if (!correctField(element, elementType, enclosingElement)) return
+    parseClass(enclosingElement, builderMap)
+}
+
+internal fun parseKArg(element: Element, builderMap: MutableMap<TypeElement, ClassBinding>) {
+    val enclosingElement = element.enclosingElement as TypeElement
+    if (!correctSetter(element, enclosingElement)) return
     parseClass(enclosingElement, builderMap)
 }
 
@@ -23,25 +30,35 @@ internal fun parseClass(element: Element, builderMap: MutableMap<TypeElement, Cl
     val typeElement = element as TypeElement
     if (builderMap.containsKey(typeElement)) return
 
-    val elementType = KnownClassType.getByType(getElementType(element))
+    val elementType = KnownClassType.getByType(getFieldType(element))
     if (!correctClass(typeElement, elementType)) return
 
     val classBinding = getClassBinding(elementType!!, typeElement)
     builderMap.put(typeElement, classBinding)
 }
 
-private fun correctClass(element: TypeElement, elementType: KnownClassType?): Boolean {
-    fun check(assertion: Boolean, errorText: String) = parsingError(assertion, errorText, MakeActivityStarter::class.java, element, element)
-    return check(elementType != null, Errors.wrongClassType)
-}
-
 private fun correctField(element: Element, elementType: TypeMirror, enclosingElement: TypeElement): Boolean {
     fun check(assertion: Boolean, errorText: String) = parsingError(assertion, errorText, Arg::class.java, element, enclosingElement)
     return check(enclosingElement.kind == CLASS, Errors.notAClass)
             && check(!enclosingElement.modifiers.contains(PRIVATE), Errors.privateClass)
-            && check(isFieldValidType(elementType), Errors.notSupportedType)
-            && check(FieldAccessor(element).isAccessible(), Errors.inaccessibleField)
-            && check(!(getElementType(enclosingElement).isSubtypeOfType(BROADCAST_RECEIVER_TYPE) && !isBasicSupportedType(elementType)), Errors.notBasicTypeInReceiver)
+            && check(isValidArgumentType(elementType), Errors.notSupportedType)
+            && check(FieldAccessor(element).fullyAccessible, Errors.inaccessibleField)
+            && check(!(getFieldType(enclosingElement).isSubtypeOfType(BROADCAST_RECEIVER_TYPE) && !isBasicSupportedType(elementType)), Errors.notBasicTypeInReceiver)
+}
+
+private fun correctSetter(element: Element, enclosingElement: TypeElement): Boolean {
+    val parameterType = getSetterParameterType(element) ?: return false
+    fun check(assertion: Boolean, errorText: String) = parsingError(assertion, errorText, KArg::class.java, element, enclosingElement)
+    return check(enclosingElement.kind == CLASS, Errors.notAClass)
+            && check(!enclosingElement.modifiers.contains(PRIVATE), Errors.privateClass)
+            && check(isValidArgumentType(parameterType), Errors.notSupportedType)
+            && check(FieldAccessor(element).setterAccessible, Errors.inaccessibleField)
+            && check(!(getFieldType(enclosingElement).isSubtypeOfType(BROADCAST_RECEIVER_TYPE) && !isBasicSupportedType(parameterType)), Errors.notBasicTypeInReceiver)
+}
+
+private fun correctClass(element: TypeElement, elementType: KnownClassType?): Boolean {
+    fun check(assertion: Boolean, errorText: String) = parsingError(assertion, errorText, MakeActivityStarter::class.java, element, element)
+    return check(elementType != null, Errors.wrongClassType)
 }
 
 private fun getClassBinding(elementType: KnownClassType, typeElement: TypeElement): ClassBinding {
@@ -58,7 +75,7 @@ private fun parsingError(assertion: Boolean, text: String, annotationClass: Clas
     return assertion
 }
 
-private fun isFieldValidType(elementType: TypeMirror) = isBasicSupportedType(elementType) || isSubtypeOfSupportedTypes(elementType)
+private fun isValidArgumentType(elementType: TypeMirror) = isBasicSupportedType(elementType) || isSubtypeOfSupportedTypes(elementType)
 
 private fun isSubtypeOfSupportedTypes(elementType: TypeMirror) =
         elementType.isSubtypeOfType(SERIALIZABLE_TYPE, PARCELABLE_TYPE)

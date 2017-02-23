@@ -1,6 +1,7 @@
 package activitystarter.compiler
 
 import activitystarter.Arg
+import activitystarter.KArg
 import activitystarter.MakeActivityStarter
 import activitystarter.compiler.classbinding.ClassBinding
 import com.google.auto.service.AutoService
@@ -40,6 +41,10 @@ class ActivityStarterProcessor : AbstractProcessor() {
 
         processAnnotation<Arg>(env) { element ->
             parseArg(element, builderMap)
+        }
+
+        processAnnotation<KArg>(env) { element ->
+            parseKArg(element, builderMap)
         }
 
         processAnnotation<MakeActivityStarter>(env) { element ->

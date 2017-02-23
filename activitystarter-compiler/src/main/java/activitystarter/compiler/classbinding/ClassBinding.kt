@@ -1,6 +1,7 @@
 package activitystarter.compiler.classbinding
 
 import activitystarter.Arg
+import activitystarter.KArg
 import activitystarter.compiler.ArgumentBinding
 import activitystarter.compiler.CONTEXT
 import activitystarter.compiler.createSublists
@@ -13,11 +14,15 @@ import javax.lang.model.element.TypeElement
 internal abstract class ClassBinding(enclosingElement: TypeElement) {
 
     protected val targetTypeName = getTargetTypeName(enclosingElement)
-    protected val bindingClassName = getBindingClassName(enclosingElement)
-    protected val argumentBindings: List<ArgumentBinding> = enclosingElement.enclosedElements
+    protected val fillArgumentBindings: List<ArgumentBinding> = enclosingElement.enclosedElements
             .filter { it.getAnnotation(Arg::class.java) != null }
             .map(::ArgumentBinding)
-    val variants = argumentBindings.createSublists { it.isOptional }
+
+    private val bindingClassName = getBindingClassName(enclosingElement)
+    private val startersArgumentBindings: List<ArgumentBinding> = enclosingElement.enclosedElements
+            .filter { it.getAnnotation(Arg::class.java) != null || it.getAnnotation(KArg::class.java) != null }
+            .map(::ArgumentBinding)
+    private val starterVariants = startersArgumentBindings.createSublists { it.isOptional }
             .distinctBy { it.map { it.type } }
 
     fun brewJava() = JavaFile.builder(bindingClassName.packageName(), createActivityStarterSpec())
@@ -54,7 +59,7 @@ internal abstract class ClassBinding(enclosingElement: TypeElement) {
     }
 
     protected fun MethodSpec.Builder.addBundleSetters(bundleName: String, className: String) = apply {
-        for (arg in argumentBindings) {
+        for (arg in fillArgumentBindings) {
             val fieldName = arg.name
             val keyName = getKey(fieldName)
             val settingPart = arg.accessor.setToField(getBundleGetterFor(bundleName, arg, keyName))
@@ -75,5 +80,5 @@ internal abstract class ClassBinding(enclosingElement: TypeElement) {
     private fun TypeSpec.Builder.addClassMethods() = this
             .addMethod(createFillFieldsMethod())
             .addExtraToClass()
-            .addMethods(variants.flatMap { variant -> createStarters(variant) })
+            .addMethods(starterVariants.flatMap { variant -> createStarters(variant) })
 }

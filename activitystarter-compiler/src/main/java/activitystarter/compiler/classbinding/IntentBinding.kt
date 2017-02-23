@@ -26,7 +26,7 @@ internal abstract class IntentBinding(element: TypeElement) : ClassBinding(eleme
     }
 
     protected fun MethodSpec.Builder.addIntentSetters(targetParameterName: String) = apply {
-        for (arg in argumentBindings) {
+        for (arg in fillArgumentBindings) {
             val keyName = getKey(arg.name)
             val settingPart = arg.accessor.setToField(getIntentGetterFor(arg, keyName))
             addStatement("if(intent.hasExtra(\"$keyName\")) $targetParameterName.$settingPart")

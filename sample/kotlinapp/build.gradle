@@ -43,6 +43,7 @@ kapt {
 
 dependencies {
     compile project(':activitystarter')
+    compile project(':activitystarter-kotlin')
     kapt project(':activitystarter-compiler')
 
 // On local project use:

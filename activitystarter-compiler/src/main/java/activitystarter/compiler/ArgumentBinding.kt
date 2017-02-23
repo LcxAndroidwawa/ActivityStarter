@@ -7,7 +7,7 @@ import javax.lang.model.type.TypeMirror
 
 class ArgumentBinding(element: Element) {
     val name: String = element.simpleName.toString()
-    val elementType: TypeMirror = getElementType(element)
+    val elementType: TypeMirror = getFieldType(element)
     val type: TypeName = TypeName.get(elementType)
     val isOptional: Boolean = element.getAnnotation(Optional::class.java) != null
     val accessor: FieldAccessor = FieldAccessor(element)

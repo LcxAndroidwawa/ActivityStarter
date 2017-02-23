@@ -4,6 +4,7 @@ import activitystarter.Arg
 import activitystarter.MakeActivityStarter
 import activitystarter.compiler.classbinding.ClassBinding
 import activitystarter.compiler.getElementType
+import activitystarter.compiler.getFieldType
 import activitystarter.compiler.isSubtypeOfType
 import activitystarter.compiler.messanger
 import com.google.auto.service.AutoService
@@ -33,7 +34,7 @@ class IsSubtypeHelperProcessor(val ofWhat: String) : AbstractProcessor() {
     override fun process(elements: Set<TypeElement>, env: RoundEnvironment): Boolean {
         for (element in env.getElementsAnnotatedWith(Arg::class.java)) {
             try {
-                val isSubtype = getElementType(element).isSubtypeOfType(ofWhat)
+                val isSubtype = getFieldType(element).isSubtypeOfType(ofWhat)
                 if(!isSubtype) activitystarter.compiler.error(element, notSubtypeError)
             } catch (e: Exception) {
                 e.printStackTrace()

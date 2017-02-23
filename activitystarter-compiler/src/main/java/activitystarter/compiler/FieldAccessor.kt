@@ -12,7 +12,9 @@ class FieldAccessor(element: Element) {
     private val setterType: FieldAccessType = getFieldAccessType(element, "set", "set")
     private val getterType: FieldAccessType = getFieldAccessType(element, "get", "is")
 
-    fun isAccessible() = setterType != FieldAccessType.Inaccessible && getterType != FieldAccessType.Inaccessible
+    val setterAccessible: Boolean = setterType != FieldAccessType.Inaccessible
+    val getterAccessible: Boolean = getterType != FieldAccessType.Inaccessible
+    val fullyAccessible: Boolean = getterAccessible && setterAccessible
 
     fun setToField(whatToSet: String): String? = when (setterType) {
         FieldAccessType.Accessible -> "$fieldName = $whatToSet"

@@ -22,7 +22,7 @@ internal class ActivityBinding(element: TypeElement) : IntentBinding(element) {
     override fun createFillFieldsMethod() = getBasicFillMethodBuilder()
             .addParameter(targetTypeName, "activity")
             .addParameter(BUNDLE, "savedInstanceState")
-            .doIf(argumentBindings.isNotEmpty()) {
+            .doIf(fillArgumentBindings.isNotEmpty()) {
                 doIf(savable) { addCode("if(savedInstanceState == null || !saved) {\n") }
                 addStatement("Intent intent = activity.getIntent()")
                 addIntentSetters("activity")
@@ -43,7 +43,7 @@ internal class ActivityBinding(element: TypeElement) : IntentBinding(element) {
             .addParameter(targetTypeName, "activity")
             .addParameter(BUNDLE, "bundle")
             .doIf(savable) {
-                addSaveBundleStatements("bundle", argumentBindings, { "activity.${it.accessor.getFieldValue()}" })
+                addSaveBundleStatements("bundle", fillArgumentBindings, { "activity.${it.accessor.getFieldValue()}" })
                 addStatement("saved = true")
             }
             .build()
